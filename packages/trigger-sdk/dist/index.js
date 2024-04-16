@@ -2350,15 +2350,15 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     return;
   }
   if (response.status >= 400 && response.status < 500) {
-    const _body2 = await response.text();
+    const _body = await response.text();
     log.debug("[zodFetchWithVersions][afterFetch][400..500]", {
       statusCode: response.status,
-      responseBodyText: _body2
+      responseBodyText: _body
     });
     let body;
     if (response) {
       try {
-        body = JSON.parse(_body2);
+        body = JSON.parse(_body);
       } catch {
         body = {
           error: {
@@ -2382,18 +2382,23 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
   }
   log.debug("zodFetchWithVersions][responseJsonParse][before]");
   let jsonBody;
-  const _body = await response.text();
+  const _jsonBody = await response.text();
   try {
-    jsonBody = JSON.parse(_body);
+    jsonBody = JSON.parse(_jsonBody);
   } catch {
     jsonBody = {
       error: "JSON.parse FAILED"
     };
-    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
+      statusCode: response.status,
+      responseBodyJson: jsonBody,
+      responseBodyText: _jsonBody
+    });
   }
   log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
-    responseBodyJson: jsonBody
+    responseBodyJson: jsonBody,
+    responseBodyText: _jsonBody
   });
   const version2 = response.headers.get("trigger-version");
   if (!version2) {

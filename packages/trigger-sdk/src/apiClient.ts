@@ -878,19 +878,24 @@ async function zodfetchWithVersions<
 
   //  const jsonBody = await response.json();
   let jsonBody;
-  const _body = await response.text();
+  const _jsonBody = await response.text();
 
   try {
-    jsonBody = JSON.parse(_body);
+    jsonBody = JSON.parse(_jsonBody);
   } catch {
     jsonBody = { error: "JSON.parse FAILED" }
-    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
+      statusCode: response.status,
+      responseBodyJson: jsonBody,
+      responseBodyText: _jsonBody
+    });
   }
 
 
   log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
-    responseBodyJson: jsonBody
+    responseBodyJson: jsonBody,
+    responseBodyText: _jsonBody
   });
 
   const version = response.headers.get("trigger-version");
