@@ -808,7 +808,7 @@ async function zodfetchWithVersions<
 
   log.debug("[zodFetchWithVersions][afterFetch]", {
     statusCode: response.status,
-    method: requestInit.method
+    method: requestInit?.method
   });
 
   if (
@@ -953,7 +953,7 @@ async function zodfetch<TResponseSchema extends z.ZodTypeAny, TOptional extends 
 
   log.debug("[zodFetch][afterFetch]", {
     statusCode: response.status,
-    method: requestInit.method
+    method: requestInit?.method
   });
 
   if (
