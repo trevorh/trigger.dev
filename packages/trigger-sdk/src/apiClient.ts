@@ -829,7 +829,7 @@ async function zodfetchWithVersions<
   if (response.status >= 400 && response.status < 500) {
     const _body = await response.text();
 
-    log.debug("[zodFetch][afterFetch][400..500]", {
+    log.debug("[zodFetchWithVersions][afterFetch][400..500]", {
       statusCode: response.status,
       responseBodyText: _body
     });
@@ -851,6 +851,10 @@ async function zodfetchWithVersions<
     // retry with exponential backoff and jitter
     const delay = exponentialBackoff(retryCount + 1, 2, 50, 1150, 50);
 
+    log.debug("[zodFetchWithVersions][afterFetch][500..][beforeSetTimeout]", {
+      statusCode: response.status
+    });
+
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     return zodfetchWithVersions(
@@ -870,9 +874,21 @@ async function zodfetchWithVersions<
   }
 
 
-  const jsonBody = await response.json();
+  log.debug("zodFetchWithVersions][responseJsonParse][before]");
 
-  log.debug("[zodFetchWithVersions][beforeSchemaParse][responseJsonParse] succeeded", {
+  //  const jsonBody = await response.json();
+  let jsonBody;
+  const _body = await response.text();
+
+  try {
+    jsonBody = JSON.parse(_body);
+  } catch {
+    jsonBody = { error: "JSON.parse FAILED" }
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]");
+  }
+
+
+  log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
     responseBodyJson: jsonBody
   });
@@ -891,6 +907,8 @@ async function zodfetchWithVersions<
   if (!versionedSchema) {
     throw new Error(`Unknown version ${version}`);
   }
+
+  log.debug("[zodFetchWithVersions][beforeReturn]");
 
   return {
     version,
