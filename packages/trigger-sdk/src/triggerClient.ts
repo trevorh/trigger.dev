@@ -223,6 +223,12 @@ export class TriggerClient {
 
     const authorization = this.authorized(apiKey);
 
+    this.#internalLogger.debug("[handleRequest][beforeAuthorizationSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization: authorization
+    });
+
     switch (authorization) {
       case "authorized": {
         break;
@@ -256,6 +262,12 @@ export class TriggerClient {
       }
     }
 
+    this.#internalLogger.debug("[handleRequest][finishedAuthorizationSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization: authorization
+    });
+
     if (request.method !== "POST") {
       return {
         status: 405,
@@ -268,6 +280,13 @@ export class TriggerClient {
 
     const action = request.headers.get("x-trigger-action");
 
+    this.#internalLogger.debug("[handleRequest][action]", {
+      url: request.url,
+      method: request.method,
+      authorization: authorization,
+      triggerAction: action
+    });
+
     if (!action) {
       return {
         status: 400,
@@ -277,6 +296,13 @@ export class TriggerClient {
         headers: this.#standardResponseHeaders(timeOrigin),
       };
     }
+
+    this.#internalLogger.debug("[handleRequest][action][beginSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization: authorization,
+      triggerAction: action
+    });
 
     switch (action) {
       case "PING": {
@@ -372,8 +398,52 @@ export class TriggerClient {
         };
       }
       case "EXECUTE_JOB": {
-        const json = await request.json();
+
+        const _body = await request.text();
+
+        this.#internalLogger.debug("[handleRequest][action][EXECUTE_JOB]", {
+          url: request.url,
+          method: request.method,
+          authorization: authorization,
+          triggerAction: action,
+          bodyText: _body
+        });
+    
+
+        // const json = await request.json();
+
+        let json = {};
+        try {
+          json = JSON.parse(_body);
+        } catch {
+          this.#internalLogger.debug("[handleRequest][action][EXECUTE_JOB][jsonParseFailed]", {
+            url: request.url,
+            method: request.method,
+            authorization: authorization,
+            triggerAction: action,
+            bodyText: _body
+          });
+        }
+
+        this.#internalLogger.debug("[handleRequest][action][EXECUTE_JOB][beforeSchemaSafeParse]", {
+          url: request.url,
+          method: request.method,
+          authorization: authorization,
+          triggerAction: action,
+          bodyText: _body
+        });
+
+        
         const execution = RunJobBodySchema.safeParse(json);
+
+        this.#internalLogger.debug("[handleRequest][action][EXECUTE_JOB][afterSchemaSafeParse]", {
+          url: request.url,
+          method: request.method,
+          authorization: authorization,
+          triggerAction: action,
+          bodyText: _body,
+          schemaExecution: JSON.stringify(execution)
+        });
 
         if (!execution.success) {
           return {
@@ -394,6 +464,13 @@ export class TriggerClient {
             },
           };
         }
+
+        this.#internalLogger.debug("[handleRequest][action][EXECUTE_JOB][beforeExecuteJob]", {
+          url: request.url,
+          method: request.method,
+          authorization: authorization,
+          triggerAction: action
+        });
 
         const results = await this.#executeJob(execution.data, job, timeOrigin, triggerVersion);
 

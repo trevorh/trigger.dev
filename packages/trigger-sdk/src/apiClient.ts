@@ -200,9 +200,15 @@ export class ApiClient {
 
   async sendEvent(event: SendEvent, options: SendEventOptions = {}) {
     const apiKey = await this.#apiKey();
+    const _apiUrl = this.#apiUrl;
 
-    this.#logger.debug("Sending event", {
+    this.#logger.debug("Sending event [trevor]", {
       event,
+    });
+
+    this.#logger.debug("ISending event [apiKey, apiUrl]", {
+      apiKey,
+      _apiUrl
     });
 
     return await zodfetch(ApiEventLogSchema, `${this.#apiUrl}/api/v1/events`, {
@@ -532,7 +538,7 @@ export class ApiClient {
 
     const _apiUrl = this.#apiUrl;
 
-    this.#logger.debug("Invoking Job", {
+    this.#logger.debug("Invoking Job [trevor]", {
       jobId,
     });
 
