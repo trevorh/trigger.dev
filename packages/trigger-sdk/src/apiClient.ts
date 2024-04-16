@@ -530,8 +530,15 @@ export class ApiClient {
   async invokeJob(jobId: string, payload: any, options: InvokeOptions = {}) {
     const apiKey = await this.#apiKey();
 
+    const _apiUrl = this.#apiUrl;
+
     this.#logger.debug("Invoking Job", {
       jobId,
+    });
+
+    this.#logger.debug("Invoking Job [apiKey, apiUrl]", {
+      apiKey,
+      _apiUrl
     });
 
     const body: InvokeJobRequestBody = {
@@ -542,6 +549,10 @@ export class ApiClient {
         callbackUrl: options.callbackUrl,
       },
     };
+
+    this.#logger.debug("Invoking Job [zodFetch][before][body]", {
+      body: JSON.stringify(body)
+    });
 
     return await zodfetch(InvokeJobResponseSchema, `${this.#apiUrl}/api/v1/jobs/${jobId}/invoke`, {
       method: "POST",
@@ -785,7 +796,20 @@ async function zodfetchWithVersions<
     ? VersionedResponseBody<TVersionedResponseBodyMap, TUnversionedResponseBodySchema> | undefined
     : VersionedResponseBody<TVersionedResponseBodyMap, TUnversionedResponseBodySchema>
 > {
+
+  const log = new Logger("trigger.dev", 'debug');
+
+  log.debug("[zodFetchWithVersions][starting][beforeFetch]", {
+    url: url
+  });
+
+
   const response = await fetch(url, requestInitWithCache(requestInit));
+
+  log.debug("[zodFetchWithVersions][afterFetch]", {
+    statusCode: response.status,
+    method: requestInit.method
+  });
 
   if (
     (!requestInit || requestInit.method === "GET") &&
@@ -797,9 +821,24 @@ async function zodfetchWithVersions<
   }
 
   if (response.status >= 400 && response.status < 500) {
-    const body = await response.json();
+    const _body = await response.text();
 
-    throw new Error(body.error);
+    log.debug("[zodFetch][afterFetch][400..500]", {
+      statusCode: response.status,
+      responseBodyText: _body
+    });
+  
+    //const body = await response.json();
+    let body;
+    if (response) {
+      try {
+        body = JSON.parse(_body);
+      } catch {
+        body = { error: { message: 'zodFetch -- 400 to 500'} }
+      }
+    }
+
+    throw new Error(body);
   }
 
   if (response.status >= 500 && retryCount < 6) {
@@ -824,7 +863,13 @@ async function zodfetchWithVersions<
     );
   }
 
+
   const jsonBody = await response.json();
+
+  log.debug("[zodFetchWithVersions][beforeSchemaParse][responseJsonParse] succeeded", {
+    statusCode: response.status,
+    responseBodyJson: jsonBody
+  });
 
   const version = response.headers.get("trigger-version");
 
@@ -897,7 +942,19 @@ async function zodfetch<TResponseSchema extends z.ZodTypeAny, TOptional extends 
 ): Promise<
   TOptional extends true ? z.infer<TResponseSchema> | undefined : z.infer<TResponseSchema>
 > {
+  
+  const log = new Logger("trigger.dev", 'debug');
+
+  log.debug("[zodFetch][starting][beforeFetch]", {
+    url: url
+  });
+
   const response = await fetch(url, requestInitWithCache(requestInit));
+
+  log.debug("[zodFetch][afterFetch]", {
+    statusCode: response.status,
+    method: requestInit.method
+  });
 
   if (
     (!requestInit || requestInit.method === "GET") &&
@@ -909,9 +966,25 @@ async function zodfetch<TResponseSchema extends z.ZodTypeAny, TOptional extends 
   }
 
   if (response.status >= 400 && response.status < 500) {
-    const body = await response.json();
 
-    throw new Error(body.error);
+    const _body = await response.text();
+
+    log.debug("[zodFetch][afterFetch][400..500]", {
+      statusCode: response.status,
+      responseBodyText: _body
+    });
+  
+    //const body = await response.json();
+    let body;
+    if (response) {
+      try {
+        body = JSON.parse(_body);
+      } catch {
+        body = { error: { message: 'zodFetch -- 400 to 500'} }
+      }
+    }
+
+    throw new Error(body);
   }
 
   if (response.status >= 500 && retryCount < 6) {
@@ -930,6 +1003,11 @@ async function zodfetch<TResponseSchema extends z.ZodTypeAny, TOptional extends 
   }
 
   const jsonBody = await response.json();
+
+  log.debug("[zodFetch][beforeSchemaParse][responseJsonParse] succeeded", {
+    statusCode: response.status,
+    responseBodyJson: jsonBody
+  });
 
   return schema.parse(jsonBody);
 }
