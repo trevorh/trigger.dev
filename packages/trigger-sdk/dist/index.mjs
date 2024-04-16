@@ -1927,8 +1927,13 @@ var _ApiClient = class _ApiClient {
   }
   async sendEvent(event, options = {}) {
     const apiKey = await __privateMethod(this, _apiKey, apiKey_fn).call(this);
-    __privateGet(this, _logger).debug("Sending event", {
+    const _apiUrl2 = __privateGet(this, _apiUrl);
+    __privateGet(this, _logger).debug("Sending event [trevor]", {
       event
+    });
+    __privateGet(this, _logger).debug("ISending event [apiKey, apiUrl]", {
+      apiKey,
+      _apiUrl: _apiUrl2
     });
     return await zodfetch(ApiEventLogSchema, `${__privateGet(this, _apiUrl)}/api/v1/events`, {
       method: "POST",
@@ -2165,7 +2170,7 @@ var _ApiClient = class _ApiClient {
   async invokeJob(jobId, payload, options = {}) {
     const apiKey = await __privateMethod(this, _apiKey, apiKey_fn).call(this);
     const _apiUrl2 = __privateGet(this, _apiUrl);
-    __privateGet(this, _logger).debug("Invoking Job", {
+    __privateGet(this, _logger).debug("Invoking Job [trevor]", {
       jobId
     });
     __privateGet(this, _logger).debug("Invoking Job [apiKey, apiUrl]", {
@@ -3099,6 +3104,11 @@ var _TriggerClient = class _TriggerClient {
     const apiKey = request.headers.get("x-trigger-api-key");
     const triggerVersion = request.headers.get("x-trigger-version");
     const authorization = this.authorized(apiKey);
+    __privateGet(this, _internalLogger).debug("[handleRequest][beforeAuthorizationSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization
+    });
     switch (authorization) {
       case "authorized": {
         break;
@@ -3131,6 +3141,11 @@ var _TriggerClient = class _TriggerClient {
         };
       }
     }
+    __privateGet(this, _internalLogger).debug("[handleRequest][finishedAuthorizationSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization
+    });
     if (request.method !== "POST") {
       return {
         status: 405,
@@ -3141,6 +3156,12 @@ var _TriggerClient = class _TriggerClient {
       };
     }
     const action = request.headers.get("x-trigger-action");
+    __privateGet(this, _internalLogger).debug("[handleRequest][action]", {
+      url: request.url,
+      method: request.method,
+      authorization,
+      triggerAction: action
+    });
     if (!action) {
       return {
         status: 400,
@@ -3150,6 +3171,12 @@ var _TriggerClient = class _TriggerClient {
         headers: __privateMethod(this, _standardResponseHeaders, standardResponseHeaders_fn).call(this, timeOrigin)
       };
     }
+    __privateGet(this, _internalLogger).debug("[handleRequest][action][beginSwitch]", {
+      url: request.url,
+      method: request.method,
+      authorization,
+      triggerAction: action
+    });
     switch (action) {
       case "PING": {
         const endpointId = request.headers.get("x-trigger-endpoint-id");
@@ -3233,8 +3260,42 @@ var _TriggerClient = class _TriggerClient {
         };
       }
       case "EXECUTE_JOB": {
-        const json = await request.json();
+        const _body = await request.text();
+        __privateGet(this, _internalLogger).debug("[handleRequest][action][EXECUTE_JOB]", {
+          url: request.url,
+          method: request.method,
+          authorization,
+          triggerAction: action,
+          bodyText: _body
+        });
+        let json = {};
+        try {
+          json = JSON.parse(_body);
+        } catch {
+          __privateGet(this, _internalLogger).debug("[handleRequest][action][EXECUTE_JOB][jsonParseFailed]", {
+            url: request.url,
+            method: request.method,
+            authorization,
+            triggerAction: action,
+            bodyText: _body
+          });
+        }
+        __privateGet(this, _internalLogger).debug("[handleRequest][action][EXECUTE_JOB][beforeSchemaSafeParse]", {
+          url: request.url,
+          method: request.method,
+          authorization,
+          triggerAction: action,
+          bodyText: _body
+        });
         const execution = RunJobBodySchema.safeParse(json);
+        __privateGet(this, _internalLogger).debug("[handleRequest][action][EXECUTE_JOB][afterSchemaSafeParse]", {
+          url: request.url,
+          method: request.method,
+          authorization,
+          triggerAction: action,
+          bodyText: _body,
+          schemaExecution: JSON.stringify(execution)
+        });
         if (!execution.success) {
           return {
             status: 400,
@@ -3252,6 +3313,12 @@ var _TriggerClient = class _TriggerClient {
             }
           };
         }
+        __privateGet(this, _internalLogger).debug("[handleRequest][action][EXECUTE_JOB][beforeExecuteJob]", {
+          url: request.url,
+          method: request.method,
+          authorization,
+          triggerAction: action
+        });
         const results = await __privateMethod(this, _executeJob, executeJob_fn).call(this, execution.data, job, timeOrigin, triggerVersion);
         __privateGet(this, _internalLogger).debug("executed job", {
           results,
