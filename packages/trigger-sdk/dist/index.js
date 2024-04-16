@@ -2350,15 +2350,15 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     return;
   }
   if (response.status >= 400 && response.status < 500) {
-    const _body = await response.text();
-    log.debug("[zodFetch][afterFetch][400..500]", {
+    const _body2 = await response.text();
+    log.debug("[zodFetchWithVersions][afterFetch][400..500]", {
       statusCode: response.status,
-      responseBodyText: _body
+      responseBodyText: _body2
     });
     let body;
     if (response) {
       try {
-        body = JSON.parse(_body);
+        body = JSON.parse(_body2);
       } catch {
         body = {
           error: {
@@ -2371,14 +2371,27 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
   }
   if (response.status >= 500 && retryCount < 6) {
     const delay = exponentialBackoff(retryCount + 1, 2, 50, 1150, 50);
+    log.debug("[zodFetchWithVersions][afterFetch][500..][beforeSetTimeout]", {
+      statusCode: response.status
+    });
     await new Promise((resolve) => setTimeout(resolve, delay));
     return zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, requestInit, options, retryCount + 1);
   }
   if (response.status !== 200) {
     throw new Error(options?.errorMessage ?? `Failed to fetch ${url}, got status code ${response.status}`);
   }
-  const jsonBody = await response.json();
-  log.debug("[zodFetchWithVersions][beforeSchemaParse][responseJsonParse] succeeded", {
+  log.debug("zodFetchWithVersions][responseJsonParse][before]");
+  let jsonBody;
+  const _body = await response.text();
+  try {
+    jsonBody = JSON.parse(_body);
+  } catch {
+    jsonBody = {
+      error: "JSON.parse FAILED"
+    };
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]");
+  }
+  log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
     responseBodyJson: jsonBody
   });
@@ -2393,6 +2406,7 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
   if (!versionedSchema) {
     throw new Error(`Unknown version ${version2}`);
   }
+  log.debug("[zodFetchWithVersions][beforeReturn]");
   return {
     version: version2,
     body: versionedSchema.parse(jsonBody)
