@@ -2382,23 +2382,38 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     _bodyText = await response.text();
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog]");
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog] _bodyText typeof: " + typeof _bodyText);
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][_bodyTextValue] value: " + _bodyText.toString());
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][succeeded]", {
-      bodyText: _bodyText
+      statusCode: response.status,
+      bodyTextObj: {
+        text: _bodyText
+      },
+      bodyTextStringify: JSON.stringify(_bodyText)
     });
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][succeeded][noopLog]");
   } catch (error) {
+    log.debug("[zodFetchWithVersions][responseJsonParse][textFailed][noopLog]");
     log.debug("[zodFetchWithVersions][responseJsonParse][textFailed]", {
+      statusCode: response.status,
       bodyText: _bodyText,
       error
     });
     _bodyText = "{}";
   }
+  log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry][noopLog");
   log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry]", {
+    statusCode: response.status,
     bodyText: _bodyText
   });
   try {
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][insideTry]");
     jsonBody = JSON.parse(_bodyText);
-  } catch {
+  } catch (error) {
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed][noopLog]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed][noopLog] errorObj", {
+      statusCode: response.status,
+      errorObj: error
+    });
     jsonBody = {
       error: "JSON.parse FAILED"
     };
@@ -2408,18 +2423,23 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
       responseBodyText: _bodyText
     });
   }
+  log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock][noopLog]");
   log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
     responseBodyJson: jsonBody,
     responseBodyText: _bodyText
   });
   const version2 = response.headers.get("trigger-version");
+  log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock][beforeVersionCheck]");
   if (!version2) {
+    log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock][noVersionIf] version typeof: " + typeof version2);
+    log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock][noVersionIf][beforeReturn]");
     return {
       version: "unversioned",
       body: unversionedSchema.parse(jsonBody)
     };
   }
+  log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock][versioned][beforeVersionSchemaMap]");
   const versionedSchema = versionedSchemaMap[version2];
   if (!versionedSchema) {
     throw new Error(`Unknown version ${version2}`);
