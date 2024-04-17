@@ -867,6 +867,8 @@ async function zodfetchWithVersions<
     );
   }
 
+  log.debug("zodFetchWithVersions][beforeFinalNon200Check]");
+
   if (response.status !== 200) {
     throw new Error(
       options?.errorMessage ?? `Failed to fetch ${url}, got status code ${response.status}`
@@ -877,17 +879,47 @@ async function zodfetchWithVersions<
   log.debug("zodFetchWithVersions][responseJsonParse][before]");
 
   //  const jsonBody = await response.json();
-  let jsonBody;
-  const _jsonBody = await response.text();
+  let jsonBody = {};
+  let _bodyText = "";
 
   try {
-    jsonBody = JSON.parse(_jsonBody);
+
+    log.debug("zodFetchWithVersions][responseJsonParse][attemptingText]");
+
+    _bodyText = await response.text();
+
+    log.debug("zodFetchWithVersions][responseJsonParse][attemptingText][succeeded]", {
+      bodyText: _bodyText
+    });
+
+  } catch (error) {
+
+    log.error("zodFetchWithVersions][responseJsonParse][textFailed]", {
+      bodyText: _bodyText,
+      error: error
+    });
+
+    _bodyText = "{}";
+
+  }
+  
+  log.error("zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry]", {
+    bodyText: _bodyText
+  });
+
+  try {
+
+    log.debug("zodFetchWithVersions][responseJsonParse][attemptingJsonParse][insideTry]");
+    jsonBody = JSON.parse(_bodyText);
+
   } catch {
+
     jsonBody = { error: "JSON.parse FAILED" }
-    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
+
+    log.error("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
       statusCode: response.status,
       responseBodyJson: jsonBody,
-      responseBodyText: _jsonBody
+      responseBodyText: _bodyText
     });
   }
 
@@ -895,7 +927,7 @@ async function zodfetchWithVersions<
   log.debug("[zodFetchWithVersions][responseJsonParse][afterParseTryBlock]", {
     statusCode: response.status,
     responseBodyJson: jsonBody,
-    responseBodyText: _jsonBody
+    responseBodyText: _bodyText
   });
 
   const version = response.headers.get("trigger-version");
