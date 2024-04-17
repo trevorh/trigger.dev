@@ -884,17 +884,21 @@ async function zodfetchWithVersions<
 
   try {
 
-    log.debug("zodFetchWithVersions][responseJsonParse][attemptingText]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][noopLog]");
 
     _bodyText = await response.text();
 
-    log.debug("zodFetchWithVersions][responseJsonParse][attemptingText][succeeded]", {
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][noopLog] _bodyText typeof: " + (typeof _bodyText));
+
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][succeeded]", {
       bodyText: _bodyText
     });
 
   } catch (error) {
 
-    log.error("zodFetchWithVersions][responseJsonParse][textFailed]", {
+    log.debug("[zodFetchWithVersions][responseJsonParse][textFailed]", {
       bodyText: _bodyText,
       error: error
     });
@@ -903,20 +907,20 @@ async function zodfetchWithVersions<
 
   }
   
-  log.error("zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry]", {
+  log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][beforeTry]", {
     bodyText: _bodyText
   });
 
   try {
 
-    log.debug("zodFetchWithVersions][responseJsonParse][attemptingJsonParse][insideTry]");
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingJsonParse][insideTry]");
     jsonBody = JSON.parse(_bodyText);
 
   } catch {
 
     jsonBody = { error: "JSON.parse FAILED" }
 
-    log.error("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
+    log.debug("[zodFetchWithVersions][responseJsonParse][jsonParseFailed]", {
       statusCode: response.status,
       responseBodyJson: jsonBody,
       responseBodyText: _bodyText
