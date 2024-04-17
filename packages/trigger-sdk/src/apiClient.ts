@@ -867,7 +867,7 @@ async function zodfetchWithVersions<
     );
   }
 
-  log.debug("zodFetchWithVersions][beforeFinalNon200Check]");
+  log.debug("[zodFetchWithVersions][beforeFinalNon200Check]");
 
   if (response.status !== 200) {
     throw new Error(
@@ -876,7 +876,7 @@ async function zodfetchWithVersions<
   }
 
 
-  log.debug("zodFetchWithVersions][responseJsonParse][before]");
+  log.debug("[zodFetchWithVersions][responseJsonParse][before]");
 
   //  const jsonBody = await response.json();
   let jsonBody = {};
@@ -904,6 +904,7 @@ async function zodfetchWithVersions<
         },
         body: JSON.stringify({
           requestResponse: {
+            step: "[zodFetchWithVersions]",
             url: url,
             requestInit: requestInit,
             options: options,
@@ -1126,9 +1127,58 @@ async function zodfetch<TResponseSchema extends z.ZodTypeAny, TOptional extends 
     );
   }
 
-  const jsonBody = await response.json();
+  // const jsonBody = await response.json();
+  let jsonBody = {};
 
-  log.debug("[zodFetch][beforeSchemaParse][responseJsonParse] succeeded", {
+  log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][beforeResponseText][noopLog]");
+
+  const _bodyText = await response.text();
+
+  log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][beforeWebhook][_bodyTextLength]: " + _bodyText.toString().length);
+
+  try {
+    log.debug("[zodFetch][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook]");
+
+    const _webhookResponse = await fetch("https://webhook.site/ea10e702-b101-4d83-a642-ab148361b222", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        requestResponse: {
+          step: "[zodFetch]",
+          url: url,
+          requestInit: requestInit,
+          options: options,
+          responseBody: _bodyText,
+          schema: schema
+        }
+      }),
+    });
+  } catch (error) {
+
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] error", {
+      error: JSON.stringify(error)
+    });
+
+  } finally {
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] finally");
+  }
+
+  try {
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse]");
+    jsonBody = JSON.parse(_bodyText);
+  } catch (error) {
+
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse] failed");
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse] errorObj", {
+      statusCode: response.status,
+      error: JSON.stringify(error)
+    });
+
+  }
+
+  log.debug("[zodFetch][beforeSchemaParse][responseJsonParse][aboutToReturn]", {
     statusCode: response.status,
     responseBodyJson: jsonBody
   });

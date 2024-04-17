@@ -2377,11 +2377,11 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
     await new Promise((resolve) => setTimeout(resolve, delay));
     return zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, requestInit, options, retryCount + 1);
   }
-  log.debug("zodFetchWithVersions][beforeFinalNon200Check]");
+  log.debug("[zodFetchWithVersions][beforeFinalNon200Check]");
   if (response.status !== 200) {
     throw new Error(options?.errorMessage ?? `Failed to fetch ${url}, got status code ${response.status}`);
   }
-  log.debug("zodFetchWithVersions][responseJsonParse][before]");
+  log.debug("[zodFetchWithVersions][responseJsonParse][before]");
   let jsonBody = {};
   let _bodyText = "";
   try {
@@ -2400,6 +2400,7 @@ async function zodfetchWithVersions(versionedSchemaMap, unversionedSchema, url, 
         },
         body: JSON.stringify({
           requestResponse: {
+            step: "[zodFetchWithVersions]",
             url,
             requestInit,
             options,
@@ -2554,8 +2555,46 @@ async function zodfetch(schema, url, requestInit, options, retryCount = 0) {
   if (response.status !== 200) {
     throw new Error(options?.errorMessage ?? `Failed to fetch ${url}, got status code ${response.status}`);
   }
-  const jsonBody = await response.json();
-  log.debug("[zodFetch][beforeSchemaParse][responseJsonParse] succeeded", {
+  let jsonBody = {};
+  log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][beforeResponseText][noopLog]");
+  const _bodyText = await response.text();
+  log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][beforeWebhook][_bodyTextLength]: " + _bodyText.toString().length);
+  try {
+    log.debug("[zodFetch][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook]");
+    const _webhookResponse = await fetch("https://webhook.site/ea10e702-b101-4d83-a642-ab148361b222", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        requestResponse: {
+          step: "[zodFetch]",
+          url,
+          requestInit,
+          options,
+          responseBody: _bodyText,
+          schema
+        }
+      })
+    });
+  } catch (error) {
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] error", {
+      error: JSON.stringify(error)
+    });
+  } finally {
+    log.debug("[zodFetchWithVersions][responseJsonParse][attemptingText][afterAttemptingText][attemptingWebhook] finally");
+  }
+  try {
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse]");
+    jsonBody = JSON.parse(_bodyText);
+  } catch (error) {
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse] failed");
+    log.debug("[zodFetch][beforeSchemaParse][beforeJsonParse][afterResponseText][attemptingJsonParse] errorObj", {
+      statusCode: response.status,
+      error: JSON.stringify(error)
+    });
+  }
+  log.debug("[zodFetch][beforeSchemaParse][responseJsonParse][aboutToReturn]", {
     statusCode: response.status,
     responseBodyJson: jsonBody
   });
